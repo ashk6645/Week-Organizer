@@ -1,74 +1,79 @@
 import React from 'react';
-import { CheckCircle2, Circle, BookOpen, Code, GraduationCap, Clock, Brain, Dumbbell, MoreHorizontal} from 'lucide-react';
+import { CheckCircle2, Circle, BookOpen, Code, GraduationCap, Clock, Brain, Dumbbell, MoreHorizontal } from 'lucide-react';
 import type { Task } from '../App';
 
 interface TaskListProps {
   tasks: Task[];
   onToggleComplete: (taskId: number) => void;
+  darkMode: boolean;
 }
 
 const categories = {
-  study: { icon: BookOpen, color: 'text-blue-500' },
-  coding: { icon: Code, color: 'text-green-500' },
-  assignment: { icon: GraduationCap, color: 'text-purple-500' },
-  exam: { icon: Brain, color: 'text-purple-500' },
-  workout: { icon: Dumbbell, color: 'text-purple-500' },
-  other: { icon: MoreHorizontal, color: 'text-gray-500' },
+  study: { icon: BookOpen, color: 'bg-blue-100 text-blue-800' },
+  coding: { icon: Code, color: 'bg-emerald-100 text-emerald-800' },
+  assignment: { icon: GraduationCap, color: 'bg-violet-100 text-violet-800' },
+  exam: { icon: Brain, color: 'bg-rose-100 text-rose-800' },
+  workout: { icon: Dumbbell, color: 'bg-amber-100 text-amber-800' },
+  other: { icon: MoreHorizontal, color: 'bg-gray-100 text-gray-800' },
 };
 
-const TaskList: React.FC<TaskListProps> = ({ tasks, onToggleComplete }) => {
+const TaskList: React.FC<TaskListProps> = ({ tasks, onToggleComplete, darkMode }) => {
   return (
     <div className="p-6">
-      <div className="space-y-4">
+      <div className="grid gap-4">
         {tasks.map((task) => {
-          console.log(task);
           const CategoryIcon = categories[task.category as keyof typeof categories].icon;
-          const categoryColor = categories[task.category as keyof typeof categories].color;
+          const categoryStyle = categories[task.category as keyof typeof categories].color;
 
           return (
             <div
               key={task.id}
-              className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+              className={`group flex items-center p-4 rounded-xl transition-all ${
+                darkMode 
+                  ? 'bg-gray-800 hover:bg-gray-700/80 border border-gray-700' 
+                  : 'bg-white hover:bg-gray-50 border border-gray-100'
+              } shadow-sm hover:shadow-md`}
             >
               <button 
-                className="focus:outline-none"
+                className="mr-4 focus:outline-none"
                 onClick={() => onToggleComplete(task.id)}
               >
                 {task.completed ? (
-                  <CheckCircle2 className="w-6 h-6 text-green-500" />
+                  <CheckCircle2 className={`w-6 h-6 ${darkMode ? 'text-emerald-400' : 'text-emerald-600'}`} />
                 ) : (
-                  <Circle className="w-6 h-6 text-gray-400" />
+                  <Circle className={`w-6 h-6 ${darkMode ? 'text-gray-500' : 'text-gray-300'}`} />
                 )}
               </button>
+              
               <div className="flex-1">
-                <h3
-                  className={`text-lg font-medium ${
-                    task.completed ? 'line-through text-gray-500' : 'text-gray-900'
-                  }`}
-                >
+                <div className="flex items-center gap-3 mb-2">
+                  <span className={`${categoryStyle} px-3 py-1 rounded-full text-xs font-medium`}>
+                    <CategoryIcon className="inline-block w-4 h-4 mr-2" />
+                    {task.category}
+                  </span>
+                  <span className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                    Due: {new Date(task.dueDate).toLocaleDateString()}
+                  </span>
+                </div>
+                <h3 className={`font-medium ${task.completed ? 'line-through opacity-70' : ''}`}>
                   {task.title}
                 </h3>
-                <div className="flex items-center space-x-4 mt-1">
-                  <div className="flex items-center space-x-2">
-                    <CategoryIcon className={`w-4 h-4 ${categoryColor}`} />
-                    <span className="text-sm text-gray-500">Due: {task.dueDate}</span>
+                {task.scheduledDay && task.scheduledTime && (
+                  <div className="mt-2 flex items-center text-sm">
+                    <Clock className={`w-4 h-4 mr-2 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`} />
+                    <span className={darkMode ? 'text-gray-300' : 'text-gray-600'}>
+                      {task.scheduledDay} at {task.scheduledTime}
+                    </span>
                   </div>
-                  {task.scheduledDay && task.scheduledTime && (
-                    <div className="flex items-center space-x-2">
-                      <Clock className="w-4 h-4 text-gray-400" />
-                      <span className="text-sm text-gray-500">
-                        Scheduled: {task.scheduledDay} at {task.scheduledTime}
-                      </span>
-                    </div>
-                  )}
-                </div>
+                )}
               </div>
             </div>
           );
         })}
         {tasks.length === 0 && (
-          <div className="text-center py-8 text-gray-500">
-            No tasks yet. Click the "Add Task" button to create one!
+          <div className={`text-center p-8 rounded-xl ${darkMode ? 'bg-gray-800' : 'bg-gray-50'} border border-dashed`}>
+            <div className="text-gray-400 mb-2">No tasks found</div>
+            <div className="text-sm text-gray-500">Click "Add Task" to create your first task</div>
           </div>
         )}
       </div>

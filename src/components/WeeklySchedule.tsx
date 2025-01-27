@@ -6,28 +6,28 @@ import type { Task } from '../App';
 
 interface WeeklyScheduleProps {
   tasks: Task[];
+  darkMode: boolean;
 }
 
-const timeSlots = Array.from({ length: 17}, (_, i) => i + 7); // 8 AM to 9 PM
+const timeSlots = Array.from({ length: 17 }, (_, i) => i + 7);
 const weekDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
 const categories = {
   study: { icon: BookOpen, color: 'bg-blue-100 text-blue-800' },
-  coding: { icon: Code, color: 'bg-green-100 text-green-800' },
-  assignment: { icon: GraduationCap, color: 'bg-purple-100 text-purple-800' },
-  exam: { icon: Brain, color: 'bg-purple-100 text-purple-800' },
-  workout: { icon: Dumbbell, color: 'bg-purple-100 text-purple-800' },
+  coding: { icon: Code, color: 'bg-emerald-100 text-emerald-800' },
+  assignment: { icon: GraduationCap, color: 'bg-violet-100 text-violet-800' },
+  exam: { icon: Brain, color: 'bg-rose-100 text-rose-800' },
+  workout: { icon: Dumbbell, color: 'bg-amber-100 text-amber-800' },
   other: { icon: MoreHorizontal, color: 'bg-gray-100 text-gray-800' },
 };
 
-const WeeklySchedule: React.FC<WeeklyScheduleProps> = ({ tasks }) => {
+const WeeklySchedule: React.FC<WeeklyScheduleProps> = ({ tasks, darkMode }) => {
   const scheduleRef = useRef<HTMLDivElement>(null);
 
   const getTaskForTimeSlot = (day: string, hour: number) => {
-    return tasks.find(
-      task => 
-        task.scheduledDay === day && 
-        task.scheduledTime === `${hour}:00`
+    return tasks.filter(task => 
+      task.scheduledDay === day && 
+      task.scheduledTime === `${hour}:00`
     );
   };
 
@@ -35,24 +35,13 @@ const WeeklySchedule: React.FC<WeeklyScheduleProps> = ({ tasks }) => {
     if (!scheduleRef.current) return;
 
     try {
-      const canvas = await html2canvas(scheduleRef.current, {
-        backgroundColor: '#ffffff',
-        scale: 2, // Higher quality
-      });
+      // Ensure all elements are fully rendered
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
-      // Create PDF
-      const pdf = new jsPDF({
-        orientation: 'landscape',
-        unit: 'px',
-        format: [canvas.width, canvas.height]
-      });
-
-      // Add the canvas as an image to the PDF
-      const imgData = canvas.toDataURL('image/png');
-      pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
-
-      // Download the PDF
-      pdf.save(`schedule-${new Date().toISOString().split('T')[0]}.pdf`);
+      const canvas = await html2canvas(scheduleRef.current, { scale: 3, useCORS: true });
+      const pdf = new jsPDF('landscape', 'px', [canvas.width, canvas.height]);
+      pdf.addImage(canvas, 'PNG', 0, 0, canvas.width, canvas.height);
+      pdf.save(`weekly-schedule-${new Date().toISOString().split('T')[0]}.pdf`);
     } catch (error) {
       console.error('Error generating PDF:', error);
     }
@@ -60,58 +49,75 @@ const WeeklySchedule: React.FC<WeeklyScheduleProps> = ({ tasks }) => {
 
   return (
     <div className="p-6">
-      <div className="flex justify-end mb-4">
+      <div className="flex justify-end mb-6">
         <button
           onClick={handleDownload}
-          className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          className={`flex items-center px-4 py-2 rounded-lg font-medium transition-colors ${
+            darkMode 
+              ? 'bg-indigo-600 hover:bg-indigo-700 text-gray-100' 
+              : 'bg-indigo-600 hover:bg-indigo-700 text-white'
+          }`}
         >
           <Download className="w-4 h-4 mr-2" />
-          Download Schedule as PDF
+          Export Schedule
         </button>
       </div>
-      <div className="overflow-x-auto" ref={scheduleRef}>
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead>
+      
+      <div className="rounded-xl border" ref={scheduleRef}>
+        <table className="w-full border-collapse table-fixed">
+          <thead className={darkMode ? 'bg-gray-800' : 'bg-gray-50'}>
             <tr>
-              <th className="w-20 px-4 py-2"></th>
-              {weekDays.map((day) => (
-                <th
+              <th className="w-24 p-3 border-r text-sm font-medium text-gray-500 text-left sticky left-0 z-10 bg-inherit">
+                Time
+              </th>
+              {weekDays.map(day => (
+                <th 
                   key={day}
-                  className="px-4 py-2 text-sm font-medium text-gray-500 text-center"
+                  className="p-3 text-sm font-medium text-gray-500 text-center"
                 >
                   {day}
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200">
-            {timeSlots.map((hour) => (
-              <tr key={hour}>
-                <td className="px-4 py-2 text-sm text-gray-500 whitespace-nowrap">
+          
+          <tbody className={darkMode ? 'divide-y divide-gray-700' : 'divide-y divide-gray-200'}>
+            {timeSlots.map(hour => (
+              <tr key={hour} className={darkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-50'}>
+                <td className={`p-3 border-r text-sm text-gray-500 sticky left-0 z-10 ${
+                  darkMode ? 'bg-gray-800' : 'bg-white'
+                }`}>
                   {`${hour}:00`}
                 </td>
-                {weekDays.map((day) => {
-                  const task = getTaskForTimeSlot(day, hour);
-                  const CategoryIcon = task 
-                    ? categories[task.category as keyof typeof categories].icon 
-                    : null;
-                  const categoryColor = task 
-                    ? categories[task.category as keyof typeof categories].color 
-                    : '';
-
+                
+                {weekDays.map(day => {
+                  const tasks = getTaskForTimeSlot(day, hour);
                   return (
-                    <td
+                    <td 
                       key={`${day}-${hour}`}
-                      className="px-4 py-2 border border-gray-100 h-16 align-top"
+                      className="p-1 align-top h-16 min-h-[4rem]"
                     >
-                      {task && (
-                        <div className={`p-2 rounded-md ${categoryColor} text-sm`}>
-                          <div className="flex items-center space-x-2">
-                            {CategoryIcon && <CategoryIcon className="w-4 h-4" />}
-                            <span className="font-medium">{task.title}</span>
+                      {tasks.map(task => {
+                        const CategoryIcon = categories[task.category as keyof typeof categories].icon;
+                        const categoryStyle = categories[task.category as keyof typeof categories].color;
+                        
+                        return (
+                          <div
+                            key={task.id}
+                            className={`${categoryStyle} p-2 rounded-md text-sm mb-1 shadow-sm`}
+                          >
+                            <div className="flex items-center gap-2">
+                              <CategoryIcon className="w-4 h-4" />
+                              <span className="font-medium truncate">{task.title}</span>
+                            </div>
+                            {task.dueDate && (
+                              <div className="text-xs mt-1 opacity-80">
+                                Due: {new Date(task.dueDate).toLocaleDateString()}
+                              </div>
+                            )}
                           </div>
-                        </div>
-                      )}
+                        );
+                      })}
                     </td>
                   );
                 })}
